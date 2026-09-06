@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Build firmware
         id: esphome_build
-        uses: esphome/build-action@v8.0.0
+        uses: esphome/build-action@v8.1.0
         with:
           yaml-file: tests/${{ matrix.name }}.yaml
           version: "2026.7.4"
