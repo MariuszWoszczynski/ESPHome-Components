@@ -1554,7 +1554,7 @@ bool Telegram::potentiallyDecrypt (std::vector<uchar>::iterator &pos)
         // 2F2F bytes inside the decrypted region.
         auto decrypted_end = frame.end()-num_not_encrypted_at_end;
         bool sanxing_609b_ok =
-            dll_mfct == MANUFACTURER_KPL &&
+            (dll_mfct & 0x7fff) == MANUFACTURER_KPL &&
             dll_version == 0x01 &&
             dll_type == 0x02 &&
             a == 0x60 && b == 0x9b &&
