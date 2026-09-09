@@ -1546,12 +1546,29 @@ bool Telegram::potentiallyDecrypt (std::vector<uchar>::iterator &pos)
         CHECK(2);
         uchar a = *(pos+0);
         uchar b = *(pos+1);
+        bool decrypt_check_ok = (a == 0x2f && b == 0x2f);
+
+        // Sanxing S34U28 meters used by Tauron identify as KPL,01,02 and put
+        // the fixed 0x609B marker where OMS expects the leading 2F2F bytes.
+        // Keep the exception narrow and verify the key using the trailing
+        // 2F2F bytes inside the decrypted region.
+        auto decrypted_end = frame.end()-num_not_encrypted_at_end;
+        bool sanxing_609b_ok =
+            dll_mfct == MANUFACTURER_KPL &&
+            dll_version == 0x01 &&
+            dll_type == 0x02 &&
+            a == 0x60 && b == 0x9b &&
+            distance(pos, decrypted_end) >= 2 &&
+            *(decrypted_end-2) == 0x2f &&
+            *(decrypted_end-1) == 0x2f;
 
         addExplanationAndIncrementPos(pos, 2, KindOfData::PROTOCOL, Understanding::FULL,
-                                      "%02x%02x decrypt check bytes (%s)", *(pos+0), *(pos+1),
-                                      (*(pos+0) == 0x2f && *(pos+1) == 0x2f) ? "OK":"ERROR should be 2f2f");
+                                      "%02x%02x decrypt check bytes (%s)", a, b,
+                                      decrypt_check_ok ? "OK" :
+                                      sanxing_609b_ok ? "OK (Sanxing 609B)" :
+                                      "ERROR should be 2f2f");
 
-        if ((a != 0x2f || b != 0x2f) && !FUZZING)
+        if (!decrypt_check_ok && !sanxing_609b_ok && !FUZZING)
         {
             // Wrong key supplied.
             int num_bytes = distance(pos, frame.end());
